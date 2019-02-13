@@ -1,10 +1,13 @@
 const {User} = require('../models/user');
 
 // middleware func to make routes private
+
 var authenticate = (req, res, next) => {
+    //retrieve the 'x-auth' token form the headers
     let token = req.header('x-auth');
 
     User.findByToken(token).then((user) => {
+        //if user with token is not found
         if (!user) {
             return Promise.reject();
         }

@@ -115,10 +115,13 @@ app.patch('/todos/:id', (req, res) => {
 
 // POST /users
 app.post('/users', (req, res) => {
+    //create an object by taking 'email' and 'password' from the request object 
     let body = _.pick(req.body, ['email', 'password']);
     let user = new User(body);
     
+    //save the new user into the db
     user.save().then(() => {
+        //create new auth token for the new user
         return user.generateAuthToken();
     }).then((token) => {
         res.header('x-auth', token).send(user);
@@ -132,6 +135,32 @@ app.post('/users', (req, res) => {
 app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user);
 });
+
+//POST /users/login
+ app.post('/users/login', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+
+    User.findByCredentials(body.email, body.password).then((user) => {
+        //creates a new 'x-auth' token when user logs in successfully
+        return user.generateAuthToken().then((token) => {
+            //show the value of the token in the header
+            res.header('x-auth', token).send(user);
+        });
+    }).catch ((err) => {
+        res.status(400).send();
+    });
+ });
+
+//DELETE /users/me/token
+//occurs when user logs out, can only do so when 
+app.delete('/users/me/token', authenticate, (req, res) => {
+    req.user.removeToken(req.token).then(() => {
+        res.status(200).send();
+    }, () => {
+        res.status(400).send();
+    });
+});
+
 
 app.listen(3000, () => {
    console.log('Started on port 3000'); 

@@ -62,7 +62,7 @@ userSchema.methods.generateAuthToken = function () {
 };
 
 // statics --> object 
-// everythnig added onto statics turns into an model method
+// everything added onto statics turns into a model method
 userSchema.statics.findByToken = function (token) {
 	// model method --> gets called with the model as the 'this' binding
 	var User = this;
@@ -88,6 +88,49 @@ userSchema.statics.findByToken = function (token) {
 	});
 
 };	
+
+userSchema.statics.findByCredentials = function (email, password) {
+	var User = this;
+
+	return User.findOne({email}).then((user) => {
+		//if user cannot be found in database
+		if (!user) {
+			return Promise.reject();
+		}
+
+		//bycrpt.compare only supports callbacks
+		//return a new promise instead to keep the code consistent
+		return new Promise((resolve, reject) => {
+
+			bcrypt.compare(password, user.password, (err, res) => {
+				if (!res) {
+					//if passwords do not match
+					reject();
+				} else {
+					//resolve the promise with 'user'
+					resolve(user);
+				}
+			});
+		});
+	});
+};
+
+userSchema.methods.removeToken = function (token) {
+	var user = this;
+
+	//returning allows us to chain the calls in server.js
+	return user.update({
+		//'$pull' removes itmes from array that fit certain criteria
+		$pull: {
+			// tokens:{
+			// 	//remove if token passed into func matches token in the document
+			// 	token: token
+			// }
+			// Can be simplified: 
+			tokens: {token}
+		}
+	});
+}
 
 userSchema.pre('save', function (next) {
 	var user = this;
