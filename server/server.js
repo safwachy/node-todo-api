@@ -24,7 +24,7 @@ app.post('/todos', authenticate, (req, res) => {
         res.send(doc);
     }, (err) => {
         res.status(400).send(err); 
-    });
+    })
 });
 
 // GET /todos
@@ -63,49 +63,49 @@ app.get(`/todos/:id`, authenticate, (req, res) => {
 // DELETE /todos/:id
 // deleting a resource by id
 app.delete('/todos/:id', authenticate, (req, res) => {
-    let id = req.params.id;
-    
+    const id = req.params.id;        
     //validate id
     if ( !ObjectID.isValid(id) ) {
-        res.status(404).send();    
+       return res.status(404).send();     
     }
-    
-    //delete and return doc by id
-    Todo.findOneAndRemove({_id: id, _creator: req.user._id}).then((todo) => {
+
+    try{ 
+        //delete and return doc by id
+        const todo = Todo.findOneAndRemove({_id: id, _creator: req.user._id});
+        //check if doc exists in db
         if (!todo) {
             return res.status(404).send();
         } 
-        
-        res.send({todo})
-    }).catch((err) => {
+
+        res.send({todo});
+    } catch (err) {
         res.status(400).send();
-    });  
+    } 
 });
 
 // PATCH /todos/:id
 // updating a resource
 app.patch('/todos/:id', authenticate, (req, res) => {
-    let id = req.params.id;
+    const id = req.params.id;
     //takes an object, then array of 
     //properties that we need to pick and put into 'body'
-    var body = _.pick(req.body, ['text', 'completed']);
+    const body = _.pick(req.body, ['text', 'completed']);
 
     //validate id
     if ( !ObjectID.isValid(id) ) {
         res.status(404).send();    
     }
 
-        //update the completedAt property
-        if (_.isBoolean(body.completed) && body.completed) {
-            body.completedAt = new Date().getTime();
-        } else {
-            body.completed = false;
-            body.completedAt = null;
-        }
+    //update the completedAt property
+    if (_.isBoolean(body.completed) && body.completed) {
+        body.completedAt = new Date().getTime();
+    } else {
+        body.completed = false;
+        body.completedAt = null;
+    }
 
     //update the todo doc
     Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set: body}, {new: true}).then((todo) => {
-
         if (!todo) {
             return res.status(404).send();
         }
@@ -118,19 +118,18 @@ app.patch('/todos/:id', authenticate, (req, res) => {
 
 // POST /users
 app.post('/users', (req, res) => {
-            //create an object by taking 'email' and 'password' from the request object 
-    var body = _.pick(req.body, ['email', 'password']);
-    var user = new User(body);
-
-    //save the new user into the db
-    user.save().then(() => {
+    try {
+        //create an object by taking 'email' and 'password' from the request object 
+        const body = _.pick(req.body, ['email', 'password']);
+        const user = new User(body);
+        //save the new user into the db
+        await user.save();
         //create new auth token for the new user
-        return user.generateAuthToken();
-    }).then((token) => {
+        const token = await user.generateAuthToken();
         res.header('x-auth', token).send(user);
-    }).catch((err) => {
+    } catch (err) {
         res.status(400).send();
-    });
+    }
 });
 
 // GET /users/me
@@ -140,28 +139,28 @@ app.get('/users/me', authenticate, (req, res) => {
 });
 
 //POST /users/login
- app.post('/users/login', (req, res) => {
-    var body = _.pick(req.body, ['email', 'password']);
-
-    User.findByCredentials(body.email, body.password).then((user) => {
+ app.post('/users/login', async (req, res) => {
+    try {
+        const body = _.pick(req.body, ['email', 'password']);
+        const user = await User.findByCredentials(body.email, body.password);
         //creates a new 'x-auth' token when user logs in successfully
-        return user.generateAuthToken().then((token) => {
-            //show the value of the token in the header
-            res.header('x-auth', token).send(user);
-        });
-    }).catch ((err) => {
+        const token = await user.generateAuthToken();
+        //show the value of the token in the header
+        res.header('x-auth', token).send(user);
+    } catch (err) {
         res.status(400).send();
-    });
+    } 
  });
 
-//DELETE /users/me/token
+//DELETE /users/me/toke
 //occurs when user logs out, can only do so when 
-app.delete('/users/me/token', authenticate, (req, res) => {
-    req.user.removeToken(req.token).then(() => {
+app.delete('/users/me/token', authenticate, async (req, res) => {
+    try {
+        await req.user.removeToken(req.token);
         res.status(200).send();
-    }, () => {
+    } catch (err) {
         res.status(400).send();
-    });
+    }
 });
 
 
