@@ -4,19 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server/server.js",
+    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha server/**/*test.js",
+    "test-watch": "nodemon --exec \"npm test\""
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "body-parser": "^1.15.2",
-    "crypto-js": "^3.1.6",
-    "express": "^4.14.0",
-    "jsonwebtoken": "^7.1.9",
-    "lodash": "^4.15.0",
-    "mongodb": "^2.2.5",
-    "mongoose": "^4.5.9",
-    "validator": "^5.6.0"
+    "body-parser": "^1.18.3",
+    "crypto-js": "^3.1.8",
+    "expect": "^24.1.0",
+    "express": "^4.16.4",
+    "jsonwebtoken": "^7.4.3",
+    "lodash": "^4.17.11",
+    "mocha": "^6.0.2",
+    "mongodb": "^2.2.36",
+    "mongoose": "^4.13.18",
+    "nodemon": "^1.18.10",
+    "supertest": "^3.4.2",
+    "validator": "^5.7.0"
   }
 }

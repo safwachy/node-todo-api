@@ -1,3 +1,5 @@
+require('./config/config.js');
+
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -9,6 +11,7 @@ const {User} = require('./models/user.js');
 const {authenticate} = require('./middleware/authenticate.js');
 
 var app = express();
+const port = process.env.PORT;
 
 app.use(bodyParser.json());
 
@@ -24,7 +27,7 @@ app.post('/todos', authenticate, (req, res) => {
         res.send(doc);
     }, (err) => {
         res.status(400).send(err); 
-    })
+    });
 });
 
 // GET /todos
@@ -45,7 +48,7 @@ app.get(`/todos/:id`, authenticate, (req, res) => {
     
     //validate id
     if ( !ObjectID.isValid(id) ) {
-        res.status(404).send();    
+        return res.status(404).send();    
     }
     
     //find and return doc by id
@@ -62,17 +65,18 @@ app.get(`/todos/:id`, authenticate, (req, res) => {
 
 // DELETE /todos/:id
 // deleting a resource by id
-app.delete('/todos/:id', authenticate, (req, res) => {
+app.delete('/todos/:id', authenticate, async (req, res) => {
     const id = req.params.id;        
     //validate id
     if ( !ObjectID.isValid(id) ) {
        return res.status(404).send();     
     }
 
-    try{ 
+    try { 
         //delete and return doc by id
-        const todo = Todo.findOneAndRemove({_id: id, _creator: req.user._id});
+        let todo = await Todo.findOneAndRemove({_id: id, _creator: req.user._id});
         //check if doc exists in db
+        console.log(todo);
         if (!todo) {
             return res.status(404).send();
         } 
@@ -93,7 +97,7 @@ app.patch('/todos/:id', authenticate, (req, res) => {
 
     //validate id
     if ( !ObjectID.isValid(id) ) {
-        res.status(404).send();    
+        res.status(412).send();    
     }
 
     //update the completedAt property
@@ -117,7 +121,7 @@ app.patch('/todos/:id', authenticate, (req, res) => {
 });
 
 // POST /users
-app.post('/users', (req, res) => {
+app.post('/users', async (req, res) => {
     try {
         //create an object by taking 'email' and 'password' from the request object 
         const body = _.pick(req.body, ['email', 'password']);
@@ -165,6 +169,7 @@ app.delete('/users/me/token', authenticate, async (req, res) => {
 
 
 app.listen(3000, () => {
-   console.log('Started on port 3000'); 
+   console.log(`Started up at port ${port}`); 
 });
 
+module.exports = {app};
